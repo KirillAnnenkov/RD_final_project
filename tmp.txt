@@ -1,0 +1,15 @@
+// API:
+//   url: https://robot-dreams-de-api.herokuapp.com
+//   endpoint: /out_of_stock 
+
+// AUTH:
+//   endpoint: /auth
+//   payload: {"username": "rd_dreams", "password": "djT6LasE"}
+
+// SAVE:
+//   directory: "./data/"
+
+    "dates4get" : [
+    "2021-06-25",
+    //   "2021-06-26"
+    // ],

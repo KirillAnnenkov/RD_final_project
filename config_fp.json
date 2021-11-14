@@ -1,0 +1,15 @@
+{
+    "db_tables": [
+      "aisles",
+      "clients",
+      "departments",
+      "location_areas",
+      "orders",
+      "products",
+      "stores",
+      "store_types"
+    ],
+    "url_hdfs" : "http://192.168.0.161:50070/",
+    "log_name" : "hw5.log"
+  }
+
