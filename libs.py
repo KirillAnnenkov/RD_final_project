@@ -10,8 +10,6 @@ import logging
 from datetime import datetime, timedelta
 import os
 
-import psycopg2
-
 import get_config
 
 def db_export_bronze(**kwargs):
@@ -39,7 +37,7 @@ def db_export_bronze(**kwargs):
     conn = PostgresHook(postgres_conn_id="postgres_default").get_conn()
     cur = conn.cursor()
 
-    with client.write(os.path.join(path_hdfs, f'{kwargs["table_name"]}.csv' )) as csv_file:
+    with client.write(os.path.join(path_hdfs, f'{kwargs["table_name"]}.csv' ), overwrite=True) as csv_file:
         cur.copy_expert('COPY (SELECT * FROM {0}) TO STDOUT WITH HEADER CSV'.format(kwargs['table_name']), csv_file)
 
     logging.info(f'Успешный экспорт таблицы в bronze: {table_name}')
@@ -47,19 +45,22 @@ def db_export_bronze(**kwargs):
 def db_to_silver(**kwargs):
     '''Принимает название таблицы из БД, выгружает таблицу в silver'''
 
+    # Получить текущую директорию
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
     table_name = kwargs['table_name']
     logging.info(f'Начало экспорта таблицы в silver: {table_name}')
 
     # Создаем соеденение с hdfs
-    url_hdfs = get_config.config('../config/config_fp.json',"url_hdfs")
+    url_hdfs = get_config.config(current_dir+'/config_fp.json',"url_hdfs")
     client = InsecureClient(f'{url_hdfs}', user='user')
 
    # Получить путь к bronze
-    path_bronze = get_config.config('../config/config_fp.json',"path_bronze")
+    path_bronze = get_config.config(current_dir+'/config_fp.json',"path_bronze")
     path_bronze_date = os.path.join(path_bronze, str(datetime.today().strftime('%Y-%m-%d')))
 
     # Создать папку (дата) для выгрузки данных в silver
-    path_silver = get_config.config('../config/config_fp.json',"path_silver")
+    path_silver = get_config.config(current_dir+'/config_fp.json',"path_silver")
     path_silver_date = os.path.join(path_silver, str(datetime.today().strftime('%Y-%m-%d')))
 
     client.makedirs(path_silver_date)
@@ -69,19 +70,18 @@ def db_to_silver(**kwargs):
         .appName('FP') \
         .getOrCreate()
 
-    df = spark.read.load(os.path.join(path_bronze_date, table_name + '.csv')
-                         , header="true"
-                         , inferSchema="true"
-                         , format="csv")
+    # df = spark.read.load(os.path.join(path_bronze_date, table_name + '.csv')
+    #                      , header="true"
+    #                      , inferSchema="true"
+    #                      , format="csv")
 
-    df = df.drop_duplicates()
+    # df = df.drop_duplicates()
 
-    df.write.parquet(os.path.join(path_silver_date, table_name), mode='overwrite')
+    # df.write.parquet(os.path.join(path_silver_date, table_name), mode='overwrite')
 
     logging.info(f'Успешный экспорт таблицы в silver: {table_name}')
 
-def test(**kwargs):
-    print("Test+++++++++++++++++++++++++++++++++++++++++++++")
+
 
 if __name__ == "__main__":
     # Получить список таблиц для выгрузки из конфига

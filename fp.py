@@ -71,7 +71,7 @@ with DAG(
         silver = PythonOperator(
             task_id=f'data_to_silver_{table_name}',
             dag=dag,
-            python_callable=libs.test,
+            python_callable=libs.db_to_silver,
             op_kwargs={
                 "table_name": table_name,
             }
