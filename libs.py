@@ -70,14 +70,14 @@ def db_to_silver(**kwargs):
         .appName('FP') \
         .getOrCreate()
 
-    # df = spark.read.load(os.path.join(path_bronze_date, table_name + '.csv')
-    #                      , header="true"
-    #                      , inferSchema="true"
-    #                      , format="csv")
+    df = spark.read.load(os.path.join(path_bronze_date, table_name + '.csv')
+                         , header="true"
+                         , inferSchema="true"
+                         , format="csv")
 
-    # df = df.drop_duplicates()
+    df = df.drop_duplicates()
 
-    # df.write.parquet(os.path.join(path_silver_date, table_name), mode='overwrite')
+    df.write.parquet(os.path.join(path_silver_date, table_name), mode='overwrite')
 
     logging.info(f'Успешный экспорт таблицы в silver: {table_name}')
 
