@@ -5,6 +5,8 @@
 from hdfs import InsecureClient
 from pyspark.sql import SparkSession
 from airflow.hooks.postgres_hook import PostgresHook
+from pyspark.sql import functions as F
+from airflow.hooks.base_hook import BaseHook
 
 import logging
 from datetime import datetime, timedelta
@@ -82,7 +84,7 @@ def db_to_silver(**kwargs):
     logging.info(f'Успешный экспорт таблицы в silver: {table_name}')
 
 def load_clients_to_dwh():
-    '''Загрузка таблицы clients в dwh (greenplum)'''
+    '''Загрузка таблицы clients в DWH (greenplum)'''
 
     # Получить текущую директорию
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -91,17 +93,22 @@ def load_clients_to_dwh():
     path_silver = get_config.config(current_dir+'/config_fp.json',"path_silver")
     path_silver_date = os.path.join(path_silver, str(datetime.today().strftime('%Y-%m-%d')))
 
-    spark = SparkSession \
-        .builder.master('local') \
-        .appName('FP') \
+    spark = SparkSession.builder\
+        .config('spark.driver.extraClassPath', '/home/user/postgresql-42.3.1.jar')\
+        .master('local')\
+        .appName('FP')\
         .getOrCreate()
 
     df_clients_silver = spark.read.parquet(path_silver_date+'/clients')
+    df_dim_clients = df_clients_silver.select('client_id', F.col('fullname').alias('client_name'))
 
-    # df_dim_clients = df_silver_clients.select('client_id', F.col('fullname').alias('client_name'))
+    gp_conn = BaseHook.get_connection('dwh_greenplum')
+    gp_url = f"jdbc:postgresql://{gp_conn.host}:{gp_conn.port}/{gp_conn.schema}"
+    gp_creds = {"user":gp_conn.login, "password":gp_conn.password}
 
-    # df_dim_clients.write.jdbc(gp_url, table = 'dim_clients', properties = gp_creds, mode='overwrite')
+    df_dim_clients.write.jdbc(gp_url, table = 'dim_clients', properties = gp_creds, mode='overwrite')
 
+    logging.info(f'Успешная загрузка clients в DWH')
 
 if __name__ == "__main__":
     # Получить список таблиц для выгрузки из конфига

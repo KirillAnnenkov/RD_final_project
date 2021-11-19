@@ -58,23 +58,31 @@ with DAG(
     # Получить список таблиц для выгрузки из конфига
     tables = get_config.config(current_dir+'/config_fp.json',"db_tables")
 
-    for table_name in tables:
-        bronze = PythonOperator(
-            task_id=f'data_to_bronze_{table_name}',
-            dag=dag,
-            python_callable=libs.db_export_bronze,
-            op_kwargs={
-                "table_name": table_name,
-            }
-        )
+    # for table_name in tables:
+    #     bronze = PythonOperator(
+    #         task_id=f'data_to_bronze_{table_name}',
+    #         dag=dag,
+    #         python_callable=libs.db_export_bronze,
+    #         op_kwargs={
+    #             "table_name": table_name,
+    #         }
+    #     )
 
-        silver = PythonOperator(
-            task_id=f'data_to_silver_{table_name}',
-            dag=dag,
-            python_callable=libs.db_to_silver,
-            op_kwargs={
-                "table_name": table_name,
-            }
-        )
+    #     silver = PythonOperator(
+    #         task_id=f'data_to_silver_{table_name}',
+    #         dag=dag,
+    #         python_callable=libs.db_to_silver,
+    #         op_kwargs={
+    #             "table_name": table_name,
+    #         }
+    #     )
 
-        start >> bronze >> silver >> finish
+    #     start >> bronze >> silver >> finish
+        
+    load_clients = PythonOperator(
+        task_id='load_clients_to_dwh',
+        dag=dag,
+        python_callable=libs.load_clients_to_dwh
+    )
+    
+    finish >> load_clients
