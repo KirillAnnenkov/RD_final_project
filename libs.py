@@ -81,6 +81,26 @@ def db_to_silver(**kwargs):
 
     logging.info(f'Успешный экспорт таблицы в silver: {table_name}')
 
+def load_clients_to_dwh():
+    '''Загрузка таблицы clients в dwh (greenplum)'''
+
+    # Получить текущую директорию
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Получить путь к данным в silver
+    path_silver = get_config.config(current_dir+'/config_fp.json',"path_silver")
+    path_silver_date = os.path.join(path_silver, str(datetime.today().strftime('%Y-%m-%d')))
+
+    spark = SparkSession \
+        .builder.master('local') \
+        .appName('FP') \
+        .getOrCreate()
+
+    df_clients_silver = spark.read.parquet(path_silver_date+'/clients')
+
+    # df_dim_clients = df_silver_clients.select('client_id', F.col('fullname').alias('client_name'))
+
+    # df_dim_clients.write.jdbc(gp_url, table = 'dim_clients', properties = gp_creds, mode='overwrite')
 
 
 if __name__ == "__main__":

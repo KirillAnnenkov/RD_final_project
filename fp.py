@@ -58,7 +58,7 @@ with DAG(
     # Получить список таблиц для выгрузки из конфига
     tables = get_config.config(current_dir+'/config_fp.json',"db_tables")
 
-    for table_name in tables[0:1]:
+    for table_name in tables:
         bronze = PythonOperator(
             task_id=f'data_to_bronze_{table_name}',
             dag=dag,
