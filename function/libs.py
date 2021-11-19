@@ -88,8 +88,6 @@ def db_to_silver(**kwargs):
 
     logging.info(f'Успешный экспорт таблицы в silver: {table_name}')
 
-
-
 if __name__ == "__main__":
     # Получить список таблиц для выгрузки из конфига
     tables = get_config.config('../config/config_fp.json',"db_tables")
