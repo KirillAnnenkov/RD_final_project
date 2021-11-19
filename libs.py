@@ -110,6 +110,52 @@ def load_clients_to_dwh():
 
     logging.info(f'Успешная загрузка clients в DWH')
 
+def load_products_to_dwh():
+    '''Загрузка таблицы products в DWH (greenplum)'''
+
+    # Получить текущую директорию
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Получить путь к данным в silver
+    path_silver = get_config.config(current_dir+'/config_fp.json',"path_silver")
+    path_silver_date = os.path.join(path_silver, str(datetime.today().strftime('%Y-%m-%d')))
+
+    spark = SparkSession.builder\
+        .config('spark.driver.extraClassPath', '/home/user/postgresql-42.3.1.jar')\
+        .master('local')\
+        .appName('FP')\
+        .getOrCreate()
+
+    df_products_silver = spark.read.parquet(path_silver_date+'/products')
+    df_aisles_silver = spark.read.parquet(path_silver_date+'/aisles')
+    df_departments_silver = spark.read.parquet(path_silver_date+'/departments')
+
+    df_dim_products = df_products_silver\
+        .join(df_aisles_silver, 'aisle_id', 'left')\
+        .join(df_departments_silver, 'department_id', 'left')\
+        .select('product_id', 'product_name', 'aisle', 'department')
+
+    gp_conn = BaseHook.get_connection('dwh_greenplum')
+    gp_url = f"jdbc:postgresql://{gp_conn.host}:{gp_conn.port}/{gp_conn.schema}"
+    gp_creds = {"user":gp_conn.login, "password":gp_conn.password}
+
+    df_dim_products.write.jdbc(gp_url, table = 'dim_products', properties = gp_creds, mode='overwrite')
+
+    logging.info(f'Успешная загрузка products в DWH')    
+
+def load_aisles_to_dwh():
+    pass
+
+def load_dapartmens_to_dwh():
+    pass
+
+def load_dates_to_dwh():
+    pass
+
+def load_orders_fact_to_dwh():
+    pass
+
+
 if __name__ == "__main__":
     # Получить список таблиц для выгрузки из конфига
     tables = get_config.config('../config/config_fp.json',"db_tables")

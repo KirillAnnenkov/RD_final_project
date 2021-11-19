@@ -85,4 +85,34 @@ with DAG(
         python_callable=libs.load_clients_to_dwh
     )
     
+    load_products = PythonOperator(
+        task_id='load_products_to_dwh',
+        dag=dag,
+        python_callable=libs.load_products_to_dwh
+    )
+
+    load_aisles = PythonOperator(
+        task_id='load_aisles_to_dwh',
+        dag=dag,
+        python_callable=libs.load_aisles_to_dwh
+    )
+
+    load_departments = PythonOperator(
+        task_id='load_departments_to_dwh',
+        dag=dag,
+        python_callable=libs.load_departments_to_dwh
+    )
+
+    load_dates = PythonOperator(
+        task_id='load_dates_to_dwh',
+        dag=dag,
+        python_callable=libs.load_dates_to_dwh
+    )
+
+    load_orders_fact = PythonOperator(
+        task_id='load_orders_fact_to_dwh',
+        dag=dag,
+        python_callable=libs.load_orders_fact_to_dwh
+    )
+
     finish >> load_clients
