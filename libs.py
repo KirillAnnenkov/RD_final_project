@@ -4,6 +4,7 @@
 # from airflow.hooks.postgres_hook import PostgresHook
 from hdfs import InsecureClient
 from pyspark.sql import SparkSession
+from airflow.hooks.postgres_hook import PostgresHook
 
 import logging
 from datetime import datetime, timedelta
@@ -16,39 +17,30 @@ import get_config
 def db_export_bronze(**kwargs):
     '''Принимает название таблицы из БД, выгружает таблицу в bronze'''
 
-    # Настрой доступа к postgress (no airflow)
-    pg_creds = {
-        'host': '192.168.0.142'
-        , 'port': '5432'
-        , 'database': 'dshop'
-        , 'user': 'pguser'
-        , 'password': 'secret'
-    }
+    # Получить текущую директорию
+    current_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Получить список таблиц для выгрузки из конфига
     table_name = kwargs['table_name']
     logging.info(f'Начало экспорта таблицы в bronze: {table_name}')
 
     # Создаем соеденение с hdfs
-    url_hdfs = get_config.config('../config/config_fp.json',"url_hdfs")
+    url_hdfs = get_config.config(current_dir +'/config_fp.json',"url_hdfs")
     client = InsecureClient(f'{url_hdfs}', user='user')
 
     # Создать папку (дата) для выгрузки данных
-    path_bronze = get_config.config('../config/config_fp.json',"path_bronze")
+    path_bronze = get_config.config(current_dir+'/config_fp.json',"path_bronze")
     path_hdfs = os.path.join(path_bronze, str(datetime.today().strftime('%Y-%m-%d')))
 
     # Создать папку, если ее нет
     client.makedirs(path_hdfs)
 
-    # # Подключится к базе дaнных
-    # conn = PostgresHook(postgres_conn_id="postgres_default").get_conn()
-    # cur = conn.cursor()
+    # Подключится к базе дaнных
+    conn = PostgresHook(postgres_conn_id="postgres_default").get_conn()
+    cur = conn.cursor()
 
-    # Подключится к базе дaнных, выгрузить в bronze таблицу
-    with psycopg2.connect(**pg_creds) as pg_connection:
-        cursor = pg_connection.cursor()
-        with client.write(os.path.join(path_hdfs, f'{kwargs["table_name"]}.csv'), overwrite=True) as csv_file:
-            cursor.copy_expert('COPY (SELECT * FROM {0}) TO STDOUT WITH HEADER CSV'.format(kwargs['table_name']), csv_file)
+    with client.write(os.path.join(path_hdfs, f'{kwargs["table_name"]}.csv' )) as csv_file:
+        cur.copy_expert('COPY (SELECT * FROM {0}) TO STDOUT WITH HEADER CSV'.format(kwargs['table_name']), csv_file)
 
     logging.info(f'Успешный экспорт таблицы в bronze: {table_name}')
 
@@ -87,6 +79,9 @@ def db_to_silver(**kwargs):
     df.write.parquet(os.path.join(path_silver_date, table_name), mode='overwrite')
 
     logging.info(f'Успешный экспорт таблицы в silver: {table_name}')
+
+def test(**kwargs):
+    print("Test+++++++++++++++++++++++++++++++++++++++++++++")
 
 if __name__ == "__main__":
     # Получить список таблиц для выгрузки из конфига

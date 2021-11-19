@@ -1,0 +1,87 @@
+Настройка:
+Подключить сеть в режиме бридж на адаптер с доступом в интернет
+
+Соединение с гостевой ОС:
+ssh user@<guest-ip>
+ssh -o PubkeyAuthentication=no user@192.168.88.231
+
+Основной пользователь:
+Username: user
+Password: user
+
+Узнать <guest-ip>:
+1. Выполнить ifconfig на гостевой ОС
+2. Посмотреть на роутере
+
+Управление службами:
+sudo supervisorctl
+start|stop|status [service_group:] service_name 
+
+
+Hadoop
+------
+sudo supervisorctl start|stop|status hadoop:
+
+NameNode  http://<guest-ip>:50070/
+DataNode  http://<guest-ip>:50075/
+webhdfs http://<guest-ip>:50070/
+
+
+Apache Airflow
+--------------
+sudo supervisorctl start|stop|status airflow:
+
+Apache Airflow http://<guest-ip>:8000/
+
+
+Spark
+-----
+sudo supervisorctl start|stop|status spark:
+
+Master port: 7077
+
+Cli:
+spark_shell
+
+Spark Master http://<guest-ip>:8080/
+Spark Shell  http://<guest-ip>:4040/
+
+
+Greenplum
+---------
+sudo supervisorctl start|stop|status greenplum:
+
+Host:     gp_master
+Port:     5433
+User:     gpuser
+Password: secret
+
+master   port: 5433 (/opt/greenplum-db-6.8.1/data/master/gpsne-1/)
+segment1 port: 6000 (/opt/greenplum-db-6.8.1/data/data1/gpsne0)
+segment2 port: 6001 (/opt/greenplum-db-6.8.1/data/data2/gpsne1)
+
+Status:
+sudo -u user -i
+. /opt/greenplum-db-6.8.1/greenplum_path.sh
+gpstate
+
+Cli:
+sudo -u user -i
+. /opt/greenplum-db-6.8.1/greenplum_path.sh
+psql -p $MASTER_PORT -d template1
+
+
+Postgresql
+----------
+sudo supervisorctl start|stop|status postgres
+
+sudo service start postgres
+
+Port:     5432
+User:     pguser
+Password: secret
+
+Cli:
+sudo -u postgres -i
+psql
+
